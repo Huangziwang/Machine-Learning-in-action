@@ -1,0 +1,40 @@
+import numpy as np
+
+
+def CreateDateSet():
+    '''
+    creat some data for testing the model can be used or not
+    :return: trainx,trainy
+    '''
+    trainx = np.array([[1.0, 1.1], [1.0, 1.0], [0, 0], [0, 0.1]])
+    trainy = list('AABB')
+    return trainx, trainy
+
+
+def MyKnn(sample, trainx, trainy, k_numbers=5):
+    '''
+    attention:  all the input should be arrary expect k_numbers
+    :param sample: the sample that need to be classification
+    :param trainx: the data of the other sample which know the labels
+    :param trainy: the labels of the trainx
+    :param k_numbers: choose k_numbers most nearest the sample in the trainx data
+    :return: the prediction of the labels of the sample
+    '''
+    datasize = trainx.shape[0]
+    diffMat = np.tile(sample, (datasize, 1)) - trainx
+    sqDiffMat = diffMat ** 2
+    distance = (sqDiffMat.sum(axis=1)) ** 0.5
+    sortDistance = distance.argsort()  # np.argsort(a, axis=-1, kind='quicksort', order=None) Returns the indices that would sort an array.
+    classCount = {}
+    for i in range(k_numbers):
+        a = trainy[sortDistance[i]]
+        classCount[a] = classCount.get(a, 0) + 1
+    for key in classCount:
+        if classCount[a] > classCount[key]:
+            a = key
+    return a
+
+# test the model in a easy way
+# trainx,trainy=CreateDateSet()
+# b=MyKnn(np.array([0,0]),trainx,trainy,k_numbers=1)
+# print(b)
