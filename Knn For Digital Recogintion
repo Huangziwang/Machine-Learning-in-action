@@ -1,0 +1,140 @@
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn import datasets
+from os import listdir
+
+
+def CreateDateSet():
+    '''
+    creat some data for testing the model can be used or not
+    :return: trainx,trainy
+    '''
+    trainx = np.array([[1.0, 1.1], [1.0, 1.0], [0, 0], [0, 0.1]])
+    trainy = list('AABB')
+    return trainx, trainy
+
+
+def MyKnn(sample, trainx, trainy, k_numbers=5):
+    '''
+    attention:  all the input should be arrary expect k_numbers
+    :param sample: the sample that need to be classification
+    :param trainx: the data of the other sample which know the labels
+    :param trainy: the labels of the trainx
+    :param k_numbers: choose k_numbers most nearest the sample in the trainx data
+    :return: the prediction of the labels of the sample
+    '''
+    datasize = trainx.shape[0]
+    diffMat = np.tile(sample, (datasize, 1)) - trainx
+    sqDiffMat = diffMat ** 2
+    distance = (sqDiffMat.sum(axis=1)) ** 0.5
+    sortDistance = distance.argsort()  # np.argsort(a, axis=-1, kind='quicksort', order=None) Returns the indices that would sort an array.
+    classCount = {}
+    for i in range(k_numbers):
+        a = trainy[sortDistance[i]]
+        classCount[a] = classCount.get(a, 0) + 1
+    for key in classCount:
+        if classCount[a] > classCount[key]:
+            a = key
+    return a
+
+
+# test the model in a easy way
+# trainx,trainy=CreateDateSet()
+# b=MyKnn(np.array([0,0]),trainx,trainy,k_numbers=1)
+# print(b)
+
+def file2matrix(filename):
+    '''
+    :param filename:
+    :return: the trainx and labels of trainx
+    '''
+    f = open(filename)
+    allData = f.readlines()
+    dataLength = 4
+    dataNumber = len(allData)
+    trainx = np.zeros((dataNumber, dataLength - 1))
+    trainy = []
+    index = 0
+    for line in allData:
+        line = line.strip()
+        listFormLine = line.split('\t')
+        trainx[index, :] = listFormLine[:dataLength - 1]
+        trainy.append(listFormLine[-1])
+        index += 1
+    return trainx, trainy
+
+
+def Normalize(trainx):
+    '''
+    :param trainx: training sample
+    :return: the normalization trainx,datarange,minvalues
+    '''
+    minvalues = trainx.min(axis=0)
+    maxvalues = trainx.max(axis=0)
+    datarange = maxvalues - minvalues
+    m = trainx.shape[0]
+    nortrainx = np.zeros(np.shape(trainx))
+    nortrainx = (trainx - np.tile(minvalues, (m, 1))) / np.tile(datarange, (m, 1))
+    return nortrainx, datarange, minvalues
+
+
+# filename=r'D:\Spyder_python\machine_learning\machinelearninginaction\Ch02\datingTestSet.txt'
+# trainx,trainy=file2matrix(filename)
+# data = datasets.load_iris()
+# trainx, trainy = data.data, data.target
+# nortrainx, datarange, minvalues = Normalize(trainx)
+#
+# x, testx, y, testy = train_test_split(nortrainx, trainy, test_size=0.5)
+# index = 0
+# for item in testx:
+#     print(item)
+#     label = MyKnn(item, x, y)
+#     print(label)
+#     print(testy[index])
+#     index += 1
+#     print('*********')
+
+
+def img2vextor(filename):
+    returnVector = np.zeros((1, 1024))
+    f = open(filename)
+    for i in range(32):
+        lineStr = f.readline()
+        for j in range(32):
+            returnVector[0, 32 * i + j] = int(lineStr[j])
+    return returnVector
+
+
+content_train = r'D:\Spyder_python\machine_learning\machinelearninginaction\Ch02\trainingDigits'
+content_test = r'D:\Spyder_python\machine_learning\machinelearninginaction\Ch02\testDigits'
+
+
+def handwritingClassTest():
+    labels = []
+    trainFileList = listdir(content_train)
+    testFileList = listdir(content_test)
+    m = len(trainFileList)
+    trainMat = np.zeros((m, 1024))
+    for i in range(m):
+        fileNameStr = trainFileList[i]
+        fileStr = fileNameStr.split('.')[0]
+        classNumStr = int(fileStr.split('_')[0])
+        labels.append(classNumStr)
+        filecontent = content_train + '\\' + fileNameStr
+        trainMat[i, :] = img2vextor(filecontent)
+    error = 0
+    for i in range(len(testFileList)):
+        fileNameStr = testFileList[i]
+        fileStr = fileNameStr.split('.')[0]
+        classNumStr = int(fileStr.split('_')[0])
+        testLabels = classNumStr
+        filecontent = content_test + '\\' + fileNameStr
+        vecotorUnderResult = img2vextor(filecontent)
+        predict = MyKnn(vecotorUnderResult, trainMat, labels, 1)
+        print("The classifier came back with :%d, the real answer is :%d" % (predict, testLabels))
+        if predict != testLabels:
+            error += 1
+    print("wrong rate: ", error / len(testFileList))
+
+
+handwritingClassTest()
